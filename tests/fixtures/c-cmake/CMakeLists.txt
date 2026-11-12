@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.20)
+project(kvstore C)
+include_directories(include)
+find_package(Threads)
+add_executable(kv src/main.c src/store.c src/hash.c)

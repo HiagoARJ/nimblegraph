@@ -1,0 +1,3 @@
+*                       @platform
+src/modules/orders/     @team-orders
+src/modules/billing/    @team-billing @finance-lead

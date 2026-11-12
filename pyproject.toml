@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nimblegraph"
+version = "0.1.0"
+description = "Dependency graph of JS/TS, Python, Go, Java, Kotlin, C#, PHP, Ruby, Rust, C/C++ and Swift projects with compact, token-budgeted answers for Claude Code"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Jose Hiago Araujo da Costa" }]
+keywords = ["dependency-graph", "code-navigation", "architecture", "claude-code", "static-analysis", "tree-sitter", "typescript", "python", "go", "java", "csharp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Quality Assurance",
+]
+requires-python = ">=3.11"
+# tree-sitter parses every language but JS/TS (grammars download on first use; `nimblegraph setup` prefetches them).
+# Without it (or with its native library blocked) a regex fallback still extracts imports and declarations.
+dependencies = ["pathspec>=0.12", "tree-sitter>=0.25", "tree-sitter-language-pack>=1.22,<2"]
+
+[project.urls]
+Homepage = "https://github.com/HiagoARJ/nimblegraph"
+Issues = "https://github.com/HiagoARJ/nimblegraph/issues"
+Changelog = "https://github.com/HiagoARJ/nimblegraph/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+nimblegraph = "nimblegraph.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["nimblegraph*"]
+
+[tool.setuptools.package-data]
+nimblegraph = ["node/*.mjs", "node/package.json", "node/package-lock.json", "node/.node-version", "ui/package.json", "ui/dist/**/*", "skill/SKILL.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = [".*", "build", "dist", "*.egg", "node_modules", "fixtures"]  # fixtures hold sample test files
+
+[tool.ruff]
+line-length = 130
+
+[tool.pylint.format]
+max-line-length = 130
+
+[tool.flake8]
+max-line-length = 130
+
+[tool.pylint."messages control"]
+disable = ["missing-module-docstring", "missing-class-docstring", "missing-function-docstring", "too-many-locals", "too-many-branches", "too-many-statements", "too-many-return-statements", "too-many-instance-attributes", "too-many-arguments", "too-many-positional-arguments", "too-many-nested-blocks", "too-few-public-methods"]

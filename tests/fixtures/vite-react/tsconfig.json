@@ -1,0 +1,5 @@
+{
+  // Vite pattern: the root config only holds references
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
+}

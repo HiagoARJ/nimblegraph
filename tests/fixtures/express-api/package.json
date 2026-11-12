@@ -1,0 +1,1 @@
+{ "name": "express-api", "main": "src/server.ts", "dependencies": { "express": "^5", "zod": "^3", "cors": "^2" } }

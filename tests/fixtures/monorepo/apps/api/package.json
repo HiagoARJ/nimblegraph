@@ -1,0 +1,1 @@
+{ "name": "@mono/api", "imports": { "#db": "./src/db.ts" }, "dependencies": { "@mono/shared": "workspace:*" } }

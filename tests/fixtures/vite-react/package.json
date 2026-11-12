@@ -1,0 +1,1 @@
+{ "name": "vite-react", "private": true, "type": "module", "dependencies": { "react": "^19", "react-router-dom": "^7", "axios": "^1", "swr": "^2" } }

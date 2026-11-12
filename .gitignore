@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+/build/
+/dist/
+
+# Node
+node_modules/
+
+# nimblegraph index of this repo (cache)
+.nimblegraph/graph.db*
+
+# build output of the .NET fixture (tools restore it when the folder is opened; has local paths)
+tests/fixtures/csharp-aspnet/**/obj/
+
+# local only
+.claude/settings.local.json
+docs/HANDOFF.md
+docs/PLAN.md
+benchmarks/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

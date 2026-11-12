@@ -1,0 +1,9 @@
+{
+  "name": "nimblegraph-node-engine",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "dependencies": {
+    "typescript": "^5.9.0"
+  }
+}
