@@ -6,7 +6,7 @@ import json
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = "3"
+SCHEMA_VERSION = "4"  # 4: file hashes ignore CRLF/LF (scanner.content_hash)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT);
