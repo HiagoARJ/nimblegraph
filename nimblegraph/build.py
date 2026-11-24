@@ -187,6 +187,10 @@ def assemble(cfg: Config, sr: scanner.ScanResult, parsed: dict[str, dict]) -> tu
     resolver = Resolver(cfg.root, files, sr.packages, cfg["aliases"])
 
     def classify_import(imp: dict, path: str) -> Resolution:
+        if resolver.aliases:  # config.toml aliases win over the engine (e.g. a package served by a sibling source dir)
+            hit = resolver._alias_hit(resolver.aliases.items(), imp["spec"].split("?")[0])
+            if hit:
+                return Resolution("file", hit)
         if "resolved" in imp:  # Node engine
             r = imp.get("resolved")
             if r:
