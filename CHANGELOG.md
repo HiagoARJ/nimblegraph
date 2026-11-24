@@ -6,6 +6,12 @@ All notable changes to nimblegraph are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `[aliases]` in `.nimblegraph/config.toml` now win over the Node engine resolution, so a package installed in
+  `node_modules` can be linked to its source in a sibling folder (a workspace that holds the app and the design
+  system as separate repositories).
+
 ## [0.1.0] - 2026-11-12
 
 First public release.

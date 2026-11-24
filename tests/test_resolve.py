@@ -91,3 +91,26 @@ def test_resolver_units(tmp_path):
     p = tmp_path / "tsconfig.json"
     p.write_text('{\n // comment\n "compilerOptions": { "paths": { "@/*": ["./src/*",], }, /* x */ },\n}', encoding="utf-8")
     assert read_jsonc(p) == {"compilerOptions": {"paths": {"@/*": ["./src/*"]}}}
+
+
+@pytest.mark.parametrize("eng", ["python", pytest.param("node", marks=needs_node)])
+def test_config_alias_wins_over_installed_package(tmp_path, eng):
+    # a package installed in node_modules (built dist) but served by a sibling source folder in the workspace:
+    # the [aliases] of config.toml must win, otherwise the Node engine marks the import external
+    root = tmp_path / "ws"
+    files = {
+        ".nimblegraph/config.toml": '[aliases]\n"@acme/ui" = "ui/src"\n',
+        "app/package.json": '{"name": "app", "dependencies": {"@acme/ui": "1.0.0"}}',
+        "app/tsconfig.json": '{"compilerOptions": {"module": "esnext", "moduleResolution": "bundler"}}',
+        "app/src/main.ts": 'import { Button } from "@acme/ui";\nexport const b = Button;\n',
+        "app/node_modules/@acme/ui/package.json": '{"name": "@acme/ui", "types": "./dist/index.d.ts"}',
+        "app/node_modules/@acme/ui/dist/index.d.ts": "export declare const Button: string;\n",
+        "ui/package.json": '{"name": "@acme/ui-src"}',
+        "ui/src/index.ts": 'export const Button = "button";\n',
+    }
+    for rel, text in files.items():
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+    cfg, _ = build_fixture("", eng, root=root)
+    assert ("app/src/main.ts", "ui/src/index.ts") in {(s, d) for s, d, *_ in edges_of(cfg)}
