@@ -146,6 +146,8 @@ def test_background_run_status_and_stop(fake, project_copy, capsys):
     deadline = _t.time() + 60
     while _t.time() < deadline and not (log.is_file() and "@local describe" in log.read_text(encoding="utf-8-sig")):
         _t.sleep(0.5)
+    while _t.time() < deadline and cli._bg_running(cfg):  # the summary line is written just before the exit
+        _t.sleep(0.2)
     text = log.read_bytes()
     assert text.startswith(b"\xef\xbb\xbf")  # BOM: PowerShell 5.1 shows accents right
     assert cli.main(["local", "status", *base]) == 0

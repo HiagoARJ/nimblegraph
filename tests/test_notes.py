@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 
 from nimblegraph import cli, update
 from nimblegraph import tokens as tk
@@ -132,5 +133,5 @@ def test_find_claude_prefers_newest_extension(tmp_path, monkeypatch):
     for v in ("2.1.9", "2.1.287", "2.0.500"):
         b = tmp_path / ".vscode" / "extensions" / f"anthropic.claude-code-{v}-win32-x64" / "resources" / "native-binary"
         b.mkdir(parents=True)
-        (b / "claude.exe").write_text("")
+        (b / ("claude.exe" if os.name == "nt" else "claude")).write_text("")
     assert "2.1.287" in update.find_claude()
