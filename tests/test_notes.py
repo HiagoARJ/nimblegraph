@@ -134,3 +134,38 @@ def test_find_claude_prefers_newest_extension(tmp_path, monkeypatch):
         b.mkdir(parents=True)
         (b / "claude.exe").write_text("")
     assert "2.1.287" in update.find_claude()
+
+
+def test_hash_ignores_line_endings_and_v1_notes_upgrade(tmp_path):
+    # notes committed from a Windows checkout (core.autocrlf, CRLF) must stay fresh on a LF checkout, and a v1
+    # notes.json (sha1 of the raw bytes) upgrades without turning up-to-date notes stale
+    import hashlib
+    from nimblegraph import build, config
+    from nimblegraph.notes import VERSION, load_for
+    from nimblegraph.scanner import content_hash
+    from conftest import load_graph
+
+    assert content_hash(b"a\r\nb\r\n") == content_hash(b"a\nb\n") != content_hash(b"a\nc\n")
+    root = tmp_path / "proj"
+    src = root / "src"
+    src.mkdir(parents=True)
+    crlf = b"export const a = 1;\r\nexport const b = 2;\r\n"
+    (src / "a.ts").write_bytes(crlf)
+    (src / "b.ts").write_bytes(b"export const c = 3;\r\n")
+    (root / "package.json").write_text('{"name": "proj"}', encoding="utf-8")
+    cfg = config.load(root)
+    raw = hashlib.sha1(crlf).hexdigest()
+    cfg.dir.mkdir(parents=True, exist_ok=True)
+    cfg.notes_path.write_text(json.dumps({"version": 1, "files": {
+        "src/a.ts": {"title": "A", "hash": raw},
+        "src/b.ts": {"title": "B", "hash": "0" * 40},  # really stale: must stay stale
+    }, "chains": {"a": {"title": "A", "files": {"src/a.ts": raw}}}}), encoding="utf-8")
+    build.run(cfg, engine_pref="python", full=True)
+    notes = load_for(cfg, load_graph(cfg))
+    assert notes.version == VERSION and json.loads(cfg.notes_path.read_text(encoding="utf-8"))["version"] == VERSION
+    assert not notes.stale("src/a.ts") and notes.stale("src/b.ts")
+    assert notes.chains["a"]["files"]["src/a.ts"] == content_hash(crlf)
+    # the same content checked out with LF (another OS): still fresh
+    (src / "a.ts").write_bytes(crlf.replace(b"\r\n", b"\n"))
+    build.run(cfg, engine_pref="python")
+    assert not load_for(cfg, load_graph(cfg)).stale("src/a.ts")

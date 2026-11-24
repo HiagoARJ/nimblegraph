@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 
 from nimblegraph import tokens as tk
+from nimblegraph.scanner import content_hash
 
 FILE_LIMITS = {"title": 12, "summary": 40, "resp": 30, "scope": 12, "flow": 40}
 CHAIN_LIMITS = {"title": 12, "summary": 60, "flow": 80}
@@ -20,6 +21,7 @@ MAX_TAGS = 6
 FILE_FIELDS = ("title", "summary", "resp", "scope", "flow", "tags")
 CHAIN_FIELDS = ("title", "summary", "flow")
 SKIP_LAYERS = {"test", "config"}
+VERSION = 2  # 2: hashes from scanner.content_hash (CRLF read as LF); 1 hashed the raw bytes
 
 
 class NoteError(ValueError):
@@ -28,7 +30,7 @@ class NoteError(ValueError):
 
 def file_hash(path: Path) -> str | None:
     try:
-        return hashlib.sha1(path.read_bytes()).hexdigest()
+        return content_hash(path.read_bytes())
     except OSError:
         return None
 
@@ -76,6 +78,7 @@ class Notes:
         data = data or {}
         self.files: dict[str, dict] = data.get("files", {})
         self.chains: dict[str, dict] = data.get("chains", {})
+        self.version: int = data.get("version", 1) if data else VERSION
         self.hashes: dict[str, str] = {}  # current file hashes (from the graph)
 
     @classmethod
@@ -88,12 +91,36 @@ class Notes:
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        data = {"version": 1, "files": dict(sorted(self.files.items())), "chains": dict(sorted(self.chains.items()))}
+        data = {"version": VERSION, "files": dict(sorted(self.files.items())), "chains": dict(sorted(self.chains.items()))}
         fd, tmp = tempfile.mkstemp(dir=self.path.parent, prefix=".notes.", suffix=".tmp")
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
             f.write("\n")
         os.replace(tmp, self.path)
+
+    def upgrade_hashes(self, root: Path) -> bool:
+        """v1 -> v2: a hash that matches the raw bytes of the current file becomes its content_hash, so the upgrade
+        does not make up-to-date notes stale. Returns True when something was upgraded."""
+        if self.version >= VERSION:
+            return False
+        raw: dict[str, bytes | None] = {}
+
+        def upgrade(path: str, old: str | None) -> str | None:
+            if path not in raw:
+                try:
+                    raw[path] = (root / path).read_bytes()
+                except OSError:
+                    raw[path] = None
+            data = raw[path]
+            return content_hash(data) if data is not None and old == hashlib.sha1(data).hexdigest() else old
+
+        for key, note in self.files.items():
+            if note.get("hash"):
+                note["hash"] = upgrade(key.split("#")[0], note["hash"])
+        for chain in self.chains.values():
+            chain["files"] = {f: upgrade(f, h) for f, h in (chain.get("files") or {}).items()}
+        self.version = VERSION
+        return True
 
     def bind(self, graph) -> "Notes":
         """Current hashes, so staleness can be computed."""
@@ -234,6 +261,8 @@ class Notes:
 
 def load_for(cfg, graph=None) -> Notes:
     n = Notes.load(cfg.notes_path)
+    if n.upgrade_hashes(cfg.root) and cfg.notes_path.is_file():
+        n.save()
     if graph is not None:
         n.bind(graph)
     return n

@@ -6,6 +6,12 @@ All notable changes to nimblegraph are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- File hashes ignore line endings (CRLF is read as LF), so a `notes.json` committed from a Windows checkout with
+  `core.autocrlf` is not stale on Linux/macOS, and back. `notes.json` goes to version 2: notes written against the
+  current content are upgraded in place on the first load; the index is rebuilt once (schema 4).
+
 ## [0.1.0] - 2026-11-12
 
 First public release.

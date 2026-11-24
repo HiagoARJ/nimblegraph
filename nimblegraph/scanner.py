@@ -13,6 +13,12 @@ from nimblegraph import lang as langs
 from nimblegraph.config import Config
 from nimblegraph.tokens import from_size
 
+
+def content_hash(data: bytes) -> str:
+    """sha1 of the content with CRLF read as LF: checkouts with and without core.autocrlf give the same hash,
+    so notes committed from one OS are not stale on another."""
+    return hashlib.sha1(data.replace(b"\r\n", b"\n")).hexdigest()
+
 # files that change how imports resolve; any change invalidates the parse cache
 CONFIG_NAMES = ("package.json", "pnpm-workspace.yaml")
 CONFIG_PREFIXES = ("tsconfig", "jsconfig")
@@ -152,7 +158,7 @@ def scan(cfg: Config, prev: dict[str, tuple[int, int, str, int, int]] | None = N
             text = data.decode("utf-8", errors="replace")
             files[rel] = FileInfo(
                 path=rel,
-                hash=hashlib.sha1(data).hexdigest(),
+                hash=content_hash(data),
                 mtime=st.st_mtime_ns,
                 size=st.st_size,
                 loc=text.count("\n") + (0 if text.endswith("\n") or not text else 1),
