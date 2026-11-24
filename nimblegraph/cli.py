@@ -784,6 +784,12 @@ def _pid_alive(pid: int) -> bool:
                            stdin=subprocess.DEVNULL)
         return str(pid) in r.stdout
     try:
+        # a finished child of this very process stays a zombie until reaped, and kill(pid, 0) succeeds on zombies
+        if os.waitpid(pid, os.WNOHANG)[0] == pid:
+            return False
+    except ChildProcessError:
+        pass  # not our child: the usual case, the CLI that started it has exited
+    try:
         os.kill(pid, 0)
         return True
     except OSError:
